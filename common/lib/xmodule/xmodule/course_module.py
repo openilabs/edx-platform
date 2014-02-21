@@ -160,6 +160,14 @@ class CourseFields(object):
     lti_passports = List(help="LTI tools passports as id:client_key:client_secret", scope=Scope.settings)
     textbooks = TextbookList(help="List of pairs of (title, url) for textbooks used in this course",
                              default=[], scope=Scope.content)
+    # To maintain backwards compatibility the default value of use_unique_wiki_id is False. However when creating a
+    # course in studio this is set to True. So new courses will use a unique wiki_id. Xml courses will need to
+    # explicitly set this value to true in the policy file.
+    use_unique_wiki_id = Boolean(
+        help="Whether to use CourseLocator.package_id instead of wiki_slug for the course wiki root.",
+        default=False,
+        scope=Scope.settings
+    )
     wiki_slug = String(help="Slug that points to the wiki for this course", scope=Scope.content)
     enrollment_start = Date(help="Date that enrollment for this class is opened", scope=Scope.settings)
     enrollment_end = Date(help="Date that enrollment for this class is closed", scope=Scope.settings)
@@ -413,7 +421,8 @@ class CourseDescriptor(CourseFields, SequenceDescriptor):
             if isinstance(self.location, Location):
                 self.wiki_slug = self.location.course
             elif isinstance(self.location, CourseLocator):
-                self.wiki_slug = self.location.package_id or self.display_name
+                # Do not try to change the wiki_slug.
+                self.wiki_slug = None
 
         if self.due_date_display_format is None and self.show_timezone is False:
             # For existing courses with show_timezone set to False (and no due_date_display_format specified),
@@ -933,3 +942,18 @@ class CourseDescriptor(CourseFields, SequenceDescriptor):
             return self.display_organization
 
         return self.org
+
+    @property
+    def wiki_id(self):
+        """
+        This is used as the root page slug of the course wiki.
+        """
+        # If self.use_unique_wiki_id is False use wiki_slug which is, unless explicitly set, equal to course_number.
+        if self.use_unique_wiki_id is False and self.wiki_slug is not None:
+            return self.wiki_slug
+
+        # If self.use_unique_wiki_id is True use CourseLocator.package_id (org.course_number.run).
+        if isinstance(self.location, Location):
+            return '{0}.{1}.{2}'.format(self.location.org, self.location.course, self.location.name)
+        elif isinstance(self.location, CourseLocator):
+            return self.location.package_id
