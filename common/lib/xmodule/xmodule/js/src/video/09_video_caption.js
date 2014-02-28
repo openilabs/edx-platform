@@ -135,7 +135,6 @@ function () {
         var self = this,
             Caption = this.videoCaption;
 
-        $(window).bind('resize', Caption.resize);
         Caption.hideSubtitlesEl.on({
             'click': Caption.toggle
         });
@@ -758,7 +757,11 @@ function () {
         }
 
         if (this.resizer) {
-            this.resizer.alignByWidthOnly();
+            if (this.isFullScreen) {
+                this.resizer.setMode('both');
+            } else {
+                this.resizer.alignByWidthOnly();
+            }
         }
 
         this.videoCaption.setSubtitlesHeight();
@@ -772,12 +775,8 @@ function () {
     }
 
     function captionHeight() {
-        var paddingTop;
-
         if (this.isFullScreen) {
-            return $(window).height() -
-                this.videoControl.el.height() -
-                0.5 * this.videoControl.sliderEl.height();
+            return this.container.height() - this.videoControl.height;
         } else {
             return this.container.height();
         }

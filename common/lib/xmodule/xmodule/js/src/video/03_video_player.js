@@ -236,7 +236,11 @@ function (HTML5Video, Resizer) {
             });
         }
 
-        $(window).bind('resize', _.debounce(state.resizer.align, 100));
+        $(window).on('resize', _.debounce(function () {
+            state.trigger('videoControl.updateControlsHeight', null);
+            state.trigger('videoCaption.resize', null);
+            state.resizer.align();
+        }, 100));
     }
 
     // function _restartUsingFlash(state)
