@@ -161,7 +161,7 @@ class VideoFields(object):
         scope=Scope.preferences,
         values=[
             {"display_name": "SubRip (.srt) file", "value": "srt"},
-            {"display_name": "Text (.srt) file", "value": "txt"}
+            {"display_name": "Text (.txt) file", "value": "txt"}
         ],
         default='srt',
     )

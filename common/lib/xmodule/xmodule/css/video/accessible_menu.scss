@@ -50,7 +50,6 @@ $blue-s1: saturate($blue,15%);
       &.active{
         a {
           color: $blue;
-          pointer-events: none;
         }
       }
 

@@ -113,7 +113,8 @@
     % if track:
         <li class="video-tracks">
             ${('<a href="%s">' + _('Download transcript') + '</a>') % track
-            }<div class="menu-container">
+            }
+            <div class="menu-container">
                 <a class="menu-button" href="#" title="${'.' + transcript_format}" role="button" aria-disabled="false">${'.' + transcript_format}</a>
                 <ol class="menu" role="menu">
                 % for key, value in transcript_formats_list.items():

@@ -89,19 +89,16 @@ function () {
         // When menu items have focus, the menu stays open on
         // mouseleave. A clickHandler is added to the window
         // element to have clicks close the menu when they happen
-        // outside of it.
-        /* TO DO
-        $(window).on('click.speedMenu', _clickHandler.bind(state));
+        // outside of it. We namespace the click event to easily remove it (and
+        // only it) in _closeMenu.
+        $(window).on('click.currentMenu', _clickHandler.bind(state));
         state.videoAccessibleMenu.container.addClass('open');
-        */
     }
 
     function _closeMenu(state) {
         // Remove the previously added clickHandler from window element.
-        /* TO DO
-        $(window).off('click.speedMenu');
+        $(window).off('click.currentMenu');
         state.videoAccessibleMenu.container.removeClass('open');
-        */
     }
 
     // Various event handlers. They all return false to stop propagation and
@@ -139,8 +136,8 @@ function () {
         var KEY = $.ui.keyCode,
             keyCode = event.keyCode,
             target = $(event.currentTarget),
-            button = state.videoAccessibleMenu.button,
-            menuItemsLinks = state.videoAccessibleMenu.menuItemsLinks,
+            button = this.videoAccessibleMenu.button,
+            menuItemsLinks = this.videoAccessibleMenu.menuItemsLinks,
             index;
 
         if (target.is('a.menu-item-link')) {
@@ -160,18 +157,10 @@ function () {
                 // Close menu.
                 case KEY.TAB:
                     _closeMenu(this);
-                    /* TO DO
-                    // Set focus to previous menu button in menu bar
-                    // (Play/Pause button)
-                    if (event.shiftKey) {
-                        this.videoControl.playPauseEl.focus();
-                    }
-                    // Set focus to next menu button in menu bar
-                    // (Volume button)
-                    else {
-                        this.videoVolumeControl.buttonEl.focus();
-                    }
-                    */
+                    // TODO
+                    // What has to happen here? In speed menu, tabbing backward
+                    // will give focus to Play/Pause button and tabbing
+                    // forward to Volume button.
                     break;
                 // Close menu, give focus to button and change
                 // file type.
@@ -249,31 +238,15 @@ function () {
     // ***************************************************************
 
     function changeFileType(event) {
-        this.saveState(true, {
-            'transcript_format': $(event.currentTarget).data('value')
-        });
+        var fileType = $(event.currentTarget).data('value'),
+            button =  this.videoAccessibleMenu.button,
+            menuItems = this.videoAccessibleMenu.menuItems;
 
-        /*TO DO
-        var parentEl = $(event.target).parent();
-
-        event.preventDefault();
-
-        if (!parentEl.hasClass('active')) {
-            this.videoSpeedControl.currentSpeed = parentEl.data('speed');
-
-            this.videoSpeedControl.setSpeed(
-                // To meet the API expected format.
-                parseFloat(this.videoSpeedControl.currentSpeed)
-                    .toFixed(2)
-                    .replace(/\.00$/, '.0')
-            );
-
-            this.trigger(
-                'videoPlayer.onSpeedChange',
-                this.videoSpeedControl.currentSpeed
-            );
-        }
-        */
+        this.saveState(true, {'transcript_format': fileType});
+        menuItems.removeClass('active');
+        menuItems.find("a[data-value='" + fileType + "']").parent()
+            .addClass('active');
+        button.html('.' + fileType);
     }
 
 });
