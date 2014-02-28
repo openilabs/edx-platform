@@ -404,5 +404,5 @@ class MixedModuleStore(ModuleStoreWriteBase):
         """
         courses = []
         for modulestore in self.modulestores.values():
-            courses.extend(modulestore.get_courses_for_wiki_id(wiki_id))
+            courses.extend(modulestore.get_courses_for_wiki_id(wiki_id, loc_mapper=loc_mapper()))
         return courses

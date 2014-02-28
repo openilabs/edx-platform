@@ -1,3 +1,4 @@
+from mock import patch
 # pylint: disable=E0611
 from nose.tools import assert_equals, assert_raises, assert_false, \
     assert_true, assert_not_equals, assert_in, assert_not_in
@@ -263,10 +264,12 @@ class TestMixedModuleStore(object):
         assert_equals(Location(parents[0]).course, 'toy')
         assert_equals(Location(parents[0]).name, '2012_Fall')
 
-    def test_get_courses_for_wiki_id(self):
+    @patch('xmodule.modulestore.mixed.loc_mapper')
+    def test_get_courses_for_wiki_id(self, mock_lock_mapper):
         """
         Test the get_courses_for_wiki_id method
         """
+        mock_lock_mapper.return_value = None
         assert_equals(len(self.store.get_courses_for_wiki_id('toy')), 1)
         assert_equals(len(self.store.get_courses_for_wiki_id('simple')), 1)
         assert_equals(len(self.store.get_courses_for_wiki_id('edX.simple.2012_Fall')), 0)

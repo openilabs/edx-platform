@@ -281,22 +281,28 @@ class TestMongoModuleStore(object):
         """
         Test the get_courses_for_wiki_id method
         """
-        for course_id in self.courses:
-            course_locations = self.store.get_courses_for_wiki_id(course_id)
-            assert_equals(len(course_locations), 1)
-            assert_equals(Location('i4x', 'edX', course_id, 'course', '2012_Fall'), course_locations[0])
 
-        course_locs = self.store.get_courses_for_wiki_id('no_such_wiki')
+        # Setup LocMapperStore
+        mock_loc_mapper = loc_mapper()
+        for course_number in self.courses:
+            mock_loc_mapper.translate_location('edX/{0}/2012_Fall'.format(course_number), Location('i4x', 'edX', course_number, 'course', '2012_Fall'))
+
+        for course_number in self.courses:
+            course_locations = self.store.get_courses_for_wiki_id(course_number, loc_mapper=mock_loc_mapper)
+            assert_equals(len(course_locations), 1)
+            assert_equals(Location('i4x', 'edX', course_number, 'course', '2012_Fall'), course_locations[0])
+
+        course_locs = self.store.get_courses_for_wiki_id('no_such_wiki', loc_mapper=loc_mapper())
         assert_equals(len(course_locs), 0)
 
         # now set toy course to share the wiki with simple course
         toy_course = self.store.get_course('edX/toy/2012_Fall')
         toy_course.wiki_slug = 'simple'
         self.store.save_xmodule(toy_course)
-        course_locations = self.store.get_courses_for_wiki_id('simple')
+        course_locations = self.store.get_courses_for_wiki_id('simple', loc_mapper=mock_loc_mapper)
         assert_equals(len(course_locations), 2)
-        for course_id in ['toy', 'simple']:
-            assert_in(Location('i4x', 'edX', course_id, 'course', '2012_Fall'), course_locations)
+        for course_number in ['toy', 'simple']:
+            assert_in(Location('i4x', 'edX', course_number, 'course', '2012_Fall'), course_locations)
 
         # configure simple course to use unique wiki id.
         simple_course = self.store.get_course('edX/simple/2012_Fall')
@@ -307,12 +313,12 @@ class TestMongoModuleStore(object):
         assert_equals(simple_course.wiki_id, 'edX.simple.2012_Fall')
 
         # it should no longer be retrievable with its wiki_slug value
-        course_locations = self.store.get_courses_for_wiki_id('simple')
+        course_locations = self.store.get_courses_for_wiki_id('simple', loc_mapper=mock_loc_mapper)
         assert_equals(len(course_locations), 1)
         assert_in(Location('i4x', 'edX', 'toy', 'course', '2012_Fall'), course_locations)
 
         # but should be retrievable with its CourseLocator.package_id value
-        course_locations = self.store.get_courses_for_wiki_id('edX.simple.2012_Fall')
+        course_locations = self.store.get_courses_for_wiki_id('edX.simple.2012_Fall', loc_mapper=mock_loc_mapper)
         assert_equals(len(course_locations), 1)
         assert_in(Location('i4x', 'edX', 'simple', 'course', '2012_Fall'), course_locations)
 

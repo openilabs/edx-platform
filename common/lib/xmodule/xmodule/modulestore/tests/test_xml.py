@@ -94,8 +94,8 @@ class TestXMLModuleStore(unittest.TestCase):
         toy_course.wiki_slug = 'simple'
         course_locations = store.get_courses_for_wiki_id('simple')
         self.assertEqual(len(course_locations), 2)
-        for course_id in ['toy', 'simple']:
-            self.assertIn(Location('i4x', 'edX', course_id, 'course', '2012_Fall'), course_locations)
+        for course_number in ['toy', 'simple']:
+            self.assertIn(Location('i4x', 'edX', course_number, 'course', '2012_Fall'), course_locations)
 
         # configure simple course to use unique wiki id
         simple_course = store.get_course('edX/simple/2012_Fall')
