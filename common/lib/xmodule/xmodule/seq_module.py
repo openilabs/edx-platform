@@ -90,11 +90,7 @@ class SequenceModule(SequenceFields, XModule):
 
             childinfo = {
                 'content': rendered_child.content,
-                'title': "\n".join(
-                    grand_child.display_name
-                    for grand_child in child.get_children()
-                    if grand_child.display_name is not None
-                ),
+                'title': child.get_child_display_name(),
                 'progress_status': Progress.to_js_status_str(progress),
                 'progress_detail': Progress.to_js_detail_str(progress),
                 'type': child.get_icon_class(),
