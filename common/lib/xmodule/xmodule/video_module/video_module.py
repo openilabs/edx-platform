@@ -10,7 +10,6 @@ in-browser HTML5 video method (when in HTML5 mode).
 in XML.
 """
 
-import os
 import json
 import logging
 from operator import itemgetter
@@ -229,6 +228,7 @@ class VideoModule(VideoFields, XModule):
 
     def get_html(self):
         track_url = None
+        sub = None
 
         get_ext = lambda filename: filename.rpartition('.')[-1]
         sources = {get_ext(src): src for src in self.html5_sources}
@@ -264,6 +264,9 @@ class VideoModule(VideoFields, XModule):
 
             if self.sub:
                 languages['en'] = 'English'
+                sub = self.sub
+            elif self.transcripts:
+                sub = self.transcripts.values()[0]
 
         # OrderedDict for easy testing of rendered context in tests
         sorted_languages = OrderedDict(sorted(languages.items(), key=itemgetter(1)))
@@ -283,7 +286,7 @@ class VideoModule(VideoFields, XModule):
             'general_speed': self.global_speed,
             'saved_video_position': self.saved_video_position.total_seconds(),
             'start': self.start_time.total_seconds(),
-            'sub': self.sub,
+            'sub': sub,
             'track': track_url,
             'youtube_streams': create_youtube_string(self),
             # TODO: Later on the value 1500 should be taken from some global
