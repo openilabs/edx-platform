@@ -960,6 +960,12 @@ def _do_create_account(post_vars):
                 is_active=False)
     user.set_password(post_vars['password'])
     registration = Registration()
+
+    # add this account creation to password history
+    # NOTE, this will be a NOP unless the feature has been turned on in configuration
+    password_history_entry = PasswordHistory()
+    password_history_entry.create(user)
+
     # TODO: Rearrange so that if part of the process fails, the whole process fails.
     # Right now, we can have e.g. no registration e-mail sent out and a zombie account
     try:
