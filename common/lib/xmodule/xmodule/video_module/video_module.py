@@ -228,7 +228,6 @@ class VideoModule(VideoFields, XModule):
 
     def get_html(self):
         track_url = None
-        sub = None
 
         get_ext = lambda filename: filename.rpartition('.')[-1]
         sources = {get_ext(src): src for src in self.html5_sources}
@@ -264,9 +263,6 @@ class VideoModule(VideoFields, XModule):
 
             if self.sub:
                 languages['en'] = 'English'
-                sub = self.sub
-            elif self.transcripts:
-                sub = self.transcripts.values()[0]
 
         # OrderedDict for easy testing of rendered context in tests
         sorted_languages = OrderedDict(sorted(languages.items(), key=itemgetter(1)))
@@ -286,7 +282,7 @@ class VideoModule(VideoFields, XModule):
             'general_speed': self.global_speed,
             'saved_video_position': self.saved_video_position.total_seconds(),
             'start': self.start_time.total_seconds(),
-            'sub': sub,
+            'sub': self.sub,
             'track': track_url,
             'youtube_streams': create_youtube_string(self),
             # TODO: Later on the value 1500 should be taken from some global
@@ -332,7 +328,7 @@ class VideoModule(VideoFields, XModule):
         `available_translations`: returns list of languages, for which SRT files exist. For 'en' check if SJSON exists.
         """
         if dispatch == 'translation':
-            if 'language' not in request.GET or 'videoId' not in request.GET:
+            if 'language' not in request.GET:
                 log.info("Invalid /transcript GET parameters.")
                 return Response(status=400)
 
@@ -344,7 +340,10 @@ class VideoModule(VideoFields, XModule):
                 self.transcript_language = lang
 
             try:
-                transcript = self.translation(request.GET.get('videoId'))
+                if 'videoId' not in request.GET:
+                    transcript = self.translation(False)
+                else:
+                    transcript = self.translation(request.GET.get('videoId'))
             except TranscriptException as ex:
                 log.info(ex.message)
                 response = Response(status=404)
@@ -397,7 +396,7 @@ class VideoModule(VideoFields, XModule):
         """
         This is called to get transcript file for specific language.
 
-        subs_id: str: must be on of: self.sub or one of youtube_ids.
+        subs_id: str: must be one of: self.sub or one of youtube_ids.
 
         Logic flow:
 
@@ -418,28 +417,32 @@ class VideoModule(VideoFields, XModule):
             en: subs_videoid.srt.sjson
             non_en: uk_subs_videoid.srt.sjson
         """
-        if self.transcript_language == 'en':
-            return asset(self.location, subs_id).data
 
-        if not self.youtube_id_1_0:  # Non-youtube (HTML5) case:
-            return get_or_create_sjson(self)
+        if subs_id:
+            if self.transcript_language == 'en':
+                return asset(self.location, subs_id).data
 
-        # Youtube case:
-        youtube_ids = youtube_speed_dict(self)
-        assert subs_id in youtube_ids
+            # Youtube case:
+            youtube_ids = youtube_speed_dict(self)
+            assert subs_id in youtube_ids
 
-        try:
+            try:
+                sjson_transcript = asset(self.location, subs_id, self.transcript_language).data
+            except (NotFoundError):
+                log.info("Can't find content in storage for %s transcript: generating.", subs_id)
+                generate_sjson_for_all_speeds(
+                    self,
+                    self.transcripts[self.transcript_language],
+                    {speed: subs_id for subs_id, speed in youtube_ids.iteritems()},
+                    self.transcript_language
+                )
             sjson_transcript = asset(self.location, subs_id, self.transcript_language).data
-        except (NotFoundError):
-            log.info("Can't find content in storage for %s transcript: generating.", subs_id)
-            generate_sjson_for_all_speeds(
-                self,
-                self.transcripts[self.transcript_language],
-                {speed: subs_id for subs_id, speed in youtube_ids.iteritems()},
-                self.transcript_language
-            )
-        sjson_transcript = asset(self.location, subs_id, self.transcript_language).data
-        return sjson_transcript
+            return sjson_transcript
+        else:
+            if not self.youtube_id_1_0:  # Non-youtube (HTML5) case:
+                return get_or_create_sjson(self)
+
+
 
 
 class VideoDescriptor(VideoFields, TabsEditingDescriptor, EmptyDataRawDescriptor):

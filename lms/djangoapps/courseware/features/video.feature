@@ -106,3 +106,11 @@ Feature: LMS Video component
       | {"zh": "OEoXaMPEzfM"} |
     And I make sure captions are opened
     Then I see "好 各位同学" text in the captions
+
+  # 13
+  Scenario: CC button works correctly if transcripts and sub fields are empty, but transcript file exists is assets (Youtube mode of Video component)
+    Given I am registered for the course "test_course"
+    And I have a "subs_OEoXaMPEzfM.srt.sjson" transcript file in assets
+    And it has a video in "Youtube" mode
+    And I make sure captions are opened
+    Then I see "Hi, welcome to Edx." text in the captions
