@@ -38,7 +38,8 @@ from course_modes.models import CourseMode
 from student.models import (
     Registration, UserProfile, PendingNameChange,
     PendingEmailChange, CourseEnrollment, unique_id_for_user,
-    CourseEnrollmentAllowed, UserStanding, LoginFailures
+    CourseEnrollmentAllowed, UserStanding, LoginFailures,
+    PasswordHistory
 )
 from student.forms import PasswordResetFormNoActive
 from student.firebase_token_generator import create_token
@@ -740,6 +741,20 @@ def login_user(request, error=""):
                 "success": False,
                 "value": _('This account has been temporarily locked due to excessive login failures. Try again later.'),
             })  # TODO: this should be status code 429  # pylint: disable=fixme
+
+    # see if the user must reset his/her password due to any policy settings
+    if PasswordHistory.should_user_reset_password_now(user_found_by_email_lookup):
+        # If so, then email then don't log them in and send them a password reset email
+        form = PasswordResetFormNoActive(request.POST)
+        form.email = user_found_by_email_lookup.email
+        form.save(use_https=request.is_secure(),
+                  from_email=settings.DEFAULT_FROM_EMAIL,
+                  request=request,
+                  domain_override=request.get_host())
+        return JsonResponse({
+            "success": False,
+            "value": _('Your password has expired due to password policy on this account. You must reset your password before you can log in again. An email has been sent to the email associated with this account, please follow the instructions that are contained in that email.'),
+        })  # TODO: this should be status code 429  # pylint: disable=fixme
 
     # if the user doesn't exist, we want to set the username to an invalid
     # username so that authentication is guaranteed to fail and we can take

@@ -88,7 +88,7 @@ FEATURES = {
     # Turn on/off Microsites feature
     'USE_MICROSITES': False,
 
-    # TUrn off Advanced Security by default
+    # Turn off Advanced Security by default
     'ADVANCED_SECURITY': False,
 }
 ENABLE_JASMINE = False
